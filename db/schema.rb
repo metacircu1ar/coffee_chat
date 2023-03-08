@@ -25,15 +25,15 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_20_131217) do
   create_table "contact_entries", force: :cascade do |t|
     t.integer "contacter_id"
     t.integer "contactee_id"
-    t.index ["contactee_id"], name: "index_contact_entries_on_contactee_id"
     t.index ["contacter_id", "contactee_id"], name: "index_contact_entries_on_contacter_id_and_contactee_id", unique: true
+    t.index ["contactee_id"], name: "index_contact_entries_on_contactee_id"
   end
 
   create_table "memberships", force: :cascade do |t|
     t.integer "chat_id"
     t.integer "user_id"
-    t.index ["chat_id"], name: "index_memberships_on_chat_id"
     t.index ["user_id", "chat_id"], name: "index_memberships_on_user_id_and_chat_id", unique: true
+    t.index ["chat_id"], name: "index_memberships_on_chat_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -42,8 +42,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_20_131217) do
     t.string "text"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["user_id", "chat_id"], name: "index_messages_on_user_id_and_chat_id"
     t.index ["chat_id"], name: "index_messages_on_chat_id"
-    t.index ["user_id"], name: "index_messages_on_user_id"
   end
 
   create_table "unread_counts", force: :cascade do |t|
@@ -51,7 +51,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_20_131217) do
     t.integer "chat_id"
     t.integer "count", default: 0, null: false
     t.index ["user_id", "chat_id"], name: "index_unread_counts_on_user_id_and_chat_id", unique: true
-    t.index ["user_id"], name: "index_unread_counts_on_user_id"
+    t.index ["chat_id"], name: "index_unread_counts_on_chat_id"
   end
 
   create_table "users", force: :cascade do |t|
