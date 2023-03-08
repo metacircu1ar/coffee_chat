@@ -1,1 +1,3 @@
-![alt text](https://github.com/metacircu1ar/coffee_chat/blob/main/model_diagram.png?raw=true)
+# Video demo
+
+[![Demo](https://img.youtube.com/vi/efiJocZ6hH4/hqdefault.jpg)](https://www.youtube.com/watch?v=efiJocZ6hH4)
