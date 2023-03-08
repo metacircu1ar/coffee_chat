@@ -1,0 +1,19 @@
+{
+  "name": "app",
+  "private": "true",
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.1",
+    "@hotwired/turbo-rails": "^7.2.4",
+    "esbuild": "^0.16.10",
+    "highlightjs": "^9.16.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-multi-select-component": "^4.3.4",
+    "react-router": "^6.6.1",
+    "react-router-dom": "^6.6.1",
+    "showdown-highlight": "^3.1.0"
+  },
+  "scripts": {
+    "build": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=assets --loader:.jpg=file"
+  }
+}
