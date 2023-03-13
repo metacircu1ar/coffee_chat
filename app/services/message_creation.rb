@@ -1,7 +1,8 @@
-class MessageCreation
+class MessageCreation 
   include Monadic::Transaction
   include ServicesHelpers
   include UnreadCountsHelper
+  include Utils
 
   def create_message(user, params)
     run_result_method(:do_create, user, params)
@@ -24,7 +25,7 @@ class MessageCreation
         Abort["Failed to increment unread count"] if !increment_unread_count(chat, membership.user_id)
       end
 
-      Ok[message_id: message.id, created_at_unixtime: message.created_at.to_i]
+      Ok[message_id: message.id, created_at_unixtime: to_millisec(message.created_at)]
     end
   end
 end

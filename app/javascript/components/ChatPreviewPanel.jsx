@@ -5,11 +5,11 @@ import { readUserIdAndCookie, mergeWithoutDuplicates } from './utils';
 
 function ChatPreviewPanel({ selectedChatId, setSelectedChatId }) {
   const [chats, setChats] = useState([]);
-  const newestChatUnixTime = useRef(0);
+  const loadChatsInterval = 1000;
   const { user_id, cookie } = readUserIdAndCookie();
 
-  async function loadChats() {
-    const route = `/users/${user_id}/chats/time/${newestChatUnixTime.current}`; 
+  async function loadChats(time) {
+    const route = `/users/${user_id}/chats/time/${time}`; 
 
     const data = {
       method: 'GET',
@@ -18,7 +18,7 @@ function ChatPreviewPanel({ selectedChatId, setSelectedChatId }) {
       }
     };
     
-    console.log("ChatPreviewPanel sent request");
+    console.log("ChatPreviewPanel loadChats() sent request");
     console.log(`Route: ${route}`);
     console.log(`Request data:`);
     console.log(data);
@@ -32,23 +32,29 @@ function ChatPreviewPanel({ selectedChatId, setSelectedChatId }) {
 
         if(data.length > 0) 
         {
-          newestChatUnixTime.current = data[data.length - 1].created_at_unixtime + 1; 
+          time = data[data.length - 1].created_at_unixtime + 1; 
 
           setChats((prevData) => {
-            return mergeWithoutDuplicates(prevData, data);
+            return [...prevData, ...data];
           });
         }
+
+        setTimeout(() => {
+          loadChats(time);
+        }, loadChatsInterval);
       })
-      .catch(error => console.error(error));
+      .catch(error => {
+        console.error(error);
+        setTimeout(() => {
+          loadChats(time);
+        }, loadChatsInterval);
+      });
   };
 
   useEffect(() => {
-    loadChats();
-
-    const intervalId = setInterval(loadChats, 1000);
+    loadChats(0);
     
     return () => {
-      clearInterval(intervalId);
     }
   }, []);
 

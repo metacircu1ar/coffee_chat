@@ -2,6 +2,7 @@ class MessagesController < ApplicationController
   skip_before_action :verify_authenticity_token
   around_action :authorize, only: [:index, :create, :show]
   include Monadic
+  include Utils
 
   def index
     result = MessageIndexing.new.index_messages(current_user, index_params)
@@ -17,7 +18,7 @@ class MessagesController < ApplicationController
             user_id: message.user_id,
             user_name: message.user.name,
             text: message.text,
-            created_at_unixtime: message.created_at.to_i,
+            created_at_unixtime: to_millisec(message.created_at),
             created_at_timestamp: message.created_at.to_s
           }
         }

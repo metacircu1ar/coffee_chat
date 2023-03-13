@@ -12,7 +12,7 @@ class ChatsController < ApplicationController
         id: chat.id,
         topic: chat.topic,
         user_id: chat.user.id,
-        created_at_unixtime: chat.created_at.to_i
+        created_at_unixtime: to_millisec(chat.created_at)
       }
     end
     render json: response
@@ -43,7 +43,7 @@ class ChatsController < ApplicationController
         id: chat.id,
         topic: chat.topic,
         user_id: chat.user.id,
-        created_at_unixtime: chat.created_at.to_i     
+        created_at_unixtime: to_millisec(chat.created_at)  
       }
     else
       render json: {

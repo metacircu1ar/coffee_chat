@@ -2,12 +2,15 @@ import React, {  useEffect, useRef } from 'react';
 import Message from './Message';
 import MessageInput from './MessageInput';
 import './css/MainWindow.css';
-import { readUserIdAndCookie, mergeWithoutDuplicates } from './utils';
+import { readUserIdAndCookie } from './utils';
 
 function ConversationPanel({ selectedChatId, messageCache, setMessageCache, messages }) {
   const { user_id, cookie } = readUserIdAndCookie();
+  // A hack to stop recursing in loadMessages when 
+  // selectedChatId changes
   const lastSelectedChatId = useRef(null);
-  
+  const loadMessagesInterval = 1000;
+
   // The following 2 variables are 
   // used to scroll to the latest message.
   // We need to scroll to the latest
@@ -33,6 +36,7 @@ function ConversationPanel({ selectedChatId, messageCache, setMessageCache, mess
   }
 
   async function loadMessages(time) {
+    
     if (!(selectedChatId && lastSelectedChatId.current == selectedChatId)) return;
     
     const route = `/users/${user_id}/chats/${selectedChatId}/messages/time/${time}`; 
@@ -64,23 +68,23 @@ function ConversationPanel({ selectedChatId, messageCache, setMessageCache, mess
           
             setMessageCache((prevState) => {
               let copy = new Map(JSON.parse(JSON.stringify(Array.from(prevState))));
+
               if(copy.has(selectedChatId))
               {
-                let noDuplicates = mergeWithoutDuplicates(copy.get(selectedChatId), data.messages);
-                copy.set(selectedChatId, noDuplicates);
+                copy.set(selectedChatId, [...copy.get(selectedChatId), ...data.messages]);
               }
               else
               {
                 copy.set(selectedChatId, data.messages);
               }
-              console.log("setMessageCache", copy)
+              
               return copy;
             });
           }
 
           setTimeout(() => {
             loadMessages(time);
-          }, 1000);
+          }, loadMessagesInterval);
         }
       })
       .catch(error => {
@@ -88,7 +92,7 @@ function ConversationPanel({ selectedChatId, messageCache, setMessageCache, mess
 
           setTimeout(() => {
             loadMessages(time);
-          }, 1000);
+          }, loadMessagesInterval);
         }
       );
   };
@@ -123,8 +127,6 @@ function ConversationPanel({ selectedChatId, messageCache, setMessageCache, mess
   };
 
   useEffect(() => {
-    console.log(`useEffect no args ${selectedChatId} ${messages.length}`)
-
     lastSelectedChatId.current = selectedChatId;
 
     if(messages && messages.length > 0)
@@ -149,7 +151,6 @@ function ConversationPanel({ selectedChatId, messageCache, setMessageCache, mess
   }, [selectedChatId]);
 
   useEffect(() => {
-    console.log(`useEffect [messageCache] ${selectedChatId} ${messages.length}`)
     scrollDown();
   }, [messageCache]);
 
