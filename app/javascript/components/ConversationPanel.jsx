@@ -6,7 +6,7 @@ import { readUserIdAndCookie, mergeWithoutDuplicates } from './utils';
 
 function ConversationPanel({ selectedChatId, messageCache, setMessageCache, messages }) {
   const { user_id, cookie } = readUserIdAndCookie();
-  const newestMessageUnixTime = useRef(0);
+  const lastSelectedChatId = useRef(null);
   
   // The following 2 variables are 
   // used to scroll to the latest message.
@@ -24,31 +24,44 @@ function ConversationPanel({ selectedChatId, messageCache, setMessageCache, mess
   const messagesRef = useRef(null);
   let prevMessagesLastElementChild = null;
 
-  async function loadMessages() {
-    if (selectedChatId) {
-      const route = `/users/${user_id}/chats/${selectedChatId}/messages/time/${newestMessageUnixTime.current}`; 
+  const scrollDown = () => {
+    if(prevMessagesLastElementChild != messagesRef.current?.lastElementChild)
+    {
+      messagesRef.current?.lastElementChild?.scrollIntoView();
+      prevMessagesLastElementChild = messagesRef.current?.lastElementChild;
+    }
+  }
 
-      const data = {
-        method: 'GET',
-        headers: {
-          'Cookie': `cookie=${cookie}`
-        }
-      };
-      
-      console.log("ConversationPanel loadMessages() sent request");
-      console.log(`Route: ${route}`);
-      console.log(`Request data:`);
-      console.log(data);
+  async function loadMessages(time) {
+    if (!(selectedChatId && lastSelectedChatId.current == selectedChatId)) return;
+    
+    const route = `/users/${user_id}/chats/${selectedChatId}/messages/time/${time}`; 
 
-      fetch(route, data)
-        .then(response => response.json())
-        .then(data => {
-          console.log("ConversationPanel loadMessages() received response");
-          console.log(`Response data:`);
-          console.log(data);
+    const data = {
+      method: 'GET',
+      headers: {
+        'Cookie': `cookie=${cookie}`
+      }
+    };
+    
+    console.log("ConversationPanel loadMessages() sent request");
+    console.log(`Route: ${route}`);
+    console.log(`Request data:`);
+    console.log(data);
 
-          if(data.messages && data.messages.length > 0) 
+    fetch(route, data)
+      .then(response => response.json())
+      .then(data => {
+        console.log("ConversationPanel loadMessages() received response");
+        console.log(`Response data:`);
+        console.log(data);
+
+        if(data.messages) 
+        {
+          if(data.messages.length > 0)
           {
+            time = data.messages[data.messages.length - 1].created_at_unixtime + 1;
+          
             setMessageCache((prevState) => {
               let copy = new Map(JSON.parse(JSON.stringify(Array.from(prevState))));
               if(copy.has(selectedChatId))
@@ -64,9 +77,20 @@ function ConversationPanel({ selectedChatId, messageCache, setMessageCache, mess
               return copy;
             });
           }
-        })
-        .catch(error => console.error(error));
-    }
+
+          setTimeout(() => {
+            loadMessages(time);
+          }, 1000);
+        }
+      })
+      .catch(error => {
+          console.error(error)
+
+          setTimeout(() => {
+            loadMessages(time);
+          }, 1000);
+        }
+      );
   };
 
   async function handleNewMessage(text) {
@@ -94,43 +118,40 @@ function ConversationPanel({ selectedChatId, messageCache, setMessageCache, mess
         console.log("ConversationPanel handleNewMessage() received response");
         console.log(`Response data:`);
         console.log(data);
-        
-        if(data.status === 'Success')
-        {
-          newestMessageUnixTime.current = Math.min(newestMessageUnixTime.current, data.created_at_unixtime);
-        }
       })
       .catch(error => console.error(error));
   };
 
   useEffect(() => {
-    if(messages && messages.length > 0)
-      newestMessageUnixTime.current = messages[messages.length - 1].created_at_unixtime + 1;
+    console.log(`useEffect no args ${selectedChatId} ${messages.length}`)
 
-    loadMessages();
-    
-    const intervalId = setInterval(loadMessages, 1000);
+    lastSelectedChatId.current = selectedChatId;
+
+    if(messages && messages.length > 0)
+    {
+      let unixTimeAfterNewestMessage = messages[messages.length - 1].created_at_unixtime + 1;
+      
+      setTimeout(() => {
+        loadMessages(unixTimeAfterNewestMessage);
+      }, 0);
+    }
+    else
+    {
+      setTimeout(() => {
+        loadMessages(0);
+      }, 0);
+    }
+
+    scrollDown();
 
     return () => { 
-      clearInterval(intervalId);
-      newestMessageUnixTime.current = 0;
     }
-  });
+  }, [selectedChatId]);
 
   useEffect(() => {
-    if(messages && messages.length > 0)
-      newestMessageUnixTime.current = messages[messages.length - 1].created_at_unixtime + 1;
-
-    if(prevMessagesLastElementChild != messagesRef.current?.lastElementChild)
-    {
-      messagesRef.current?.lastElementChild?.scrollIntoView();
-      prevMessagesLastElementChild = messagesRef.current?.lastElementChild;
-    }
-
-    return () => { 
-      newestMessageUnixTime.current = 0;
-    }
-  }, [selectedChatId, messageCache]);
+    console.log(`useEffect [messageCache] ${selectedChatId} ${messages.length}`)
+    scrollDown();
+  }, [messageCache]);
 
   return (
     <div className="conversation-panel-container" >
